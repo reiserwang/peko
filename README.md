@@ -83,16 +83,16 @@ Peko uses a hybrid architecture combining a secure Rust backend with a lightweig
 
 ```mermaid
 graph TD
-    subgraph Host[Host OS (macOS)]
-        subgraph RustBackend[Rust Backend (src-tauri)]
+    subgraph Host["Host OS (macOS)"]
+        subgraph RustBackend["Rust Backend (src-tauri)"]
             Main[main.rs] --> Lib[lib.rs]
-            Lib --> State[Shared State<br>AppSettings]
+            Lib --> State["Shared State<br>AppSettings"]
             Lib --> Commands[Commands]
-            Commands --> GetSet[get_settings<br>save_websites]
-            Commands --> WinMgmt[switch_tab<br>cycle_tab]
+            Commands --> GetSet["get_settings<br>save_websites"]
+            Commands --> WinMgmt["switch_tab<br>cycle_tab"]
         end
         
-        subgraph Windows[Webview Windows]
+        subgraph Windows["Webview Windows"]
             Settings[Settings Window<br>src/index.html]
             Gemini[Gemini Window<br>External URL]
             NotebookLM[NotebookLM Window<br>External URL]
