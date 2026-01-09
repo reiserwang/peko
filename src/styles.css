@@ -31,11 +31,43 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Draggable title bar for macOS overlay style */
+.titlebar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  -webkit-user-select: none;
+  user-select: none;
+  background: transparent;
+}
+
+.titlebar-spacer {
+  width: 80px;
+  /* Space for traffic light buttons */
+}
+
+.titlebar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
 .settings-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding: 20px;
+  padding-top: 52px;
+  /* 32px titlebar + 20px original padding */
 }
 
 .settings-header {

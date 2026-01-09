@@ -2,7 +2,7 @@
     "identifier": "default",
     "description": "Capability for the main window with security restrictions",
     "windows": [
-        "main"
+        "*"
     ],
     "permissions": [
         "core:default",

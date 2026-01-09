@@ -123,8 +123,6 @@ fn save_websites(app: AppHandle, websites: Vec<Website>) -> Result<(), String> {
             .resizable(true)
             .decorations(true)
             .visible(false)
-            .title_bar_style(tauri::TitleBarStyle::Overlay)
-            .hidden_title(true)
             .data_directory(data_dir)
             .build();
         }
@@ -375,8 +373,6 @@ fn create_website_windows(app: &tauri::App, settings: &AppSettings) {
         .resizable(true)
         .decorations(true)
         .visible(visible)
-        .title_bar_style(tauri::TitleBarStyle::Overlay)
-        .hidden_title(true)
         .data_directory(data_dir)
         .build();
     }
