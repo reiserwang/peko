@@ -77,6 +77,51 @@ peko/
         └── lib.rs        # Menu, windows, commands
 ```
 
+## 🏗️ Architecture
+
+Peko uses a hybrid architecture combining a secure Rust backend with a lightweight web frontend.
+
+```mermaid
+graph TD
+    subgraph Host[Host OS (macOS)]
+        subgraph RustBackend[Rust Backend (src-tauri)]
+            Main[main.rs] --> Lib[lib.rs]
+            Lib --> State[Shared State<br>AppSettings]
+            Lib --> Commands[Commands]
+            Commands --> GetSet[get_settings<br>save_websites]
+            Commands --> WinMgmt[switch_tab<br>cycle_tab]
+        end
+        
+        subgraph Windows[Webview Windows]
+            Settings[Settings Window<br>src/index.html]
+            Gemini[Gemini Window<br>External URL]
+            NotebookLM[NotebookLM Window<br>External URL]
+        end
+    end
+
+    Settings -- IPC --> Commands
+    Commands -- Create/Manage --> Windows
+    State -- Persist --> File[settings.json]
+```
+
+### Core Components
+
+1. **Rust Backend (`lib.rs`)**
+   - **State Management**: Handles active tab tracking and website configuration using `Mutex<AppSettings>`.
+   - **Window Manager**: Dynamically creates/destroys windows based on settings. Each website runs in its own isolated webview.
+   - **IPC Commands**: Exposes functions like `save_websites` and `switch_tab` to the frontend context.
+   - **Menu System**: Native macOS menu bar integration for tab switching and controls.
+
+2. **Frontend (`src/`)**
+   - **Settings UI**: A lightweight HTML/JS interface for managing websites.
+   - **IPC Bridge**: Uses `window.__TAURI__.core.invoke` to communicate with Rust.
+   - **Asset Handling**: Bundled minimal CSS/JS resources.
+
+3. **Security Model**
+   - **Capabilities**: Using `capabilities/default.json` to strictly define permissions.
+   - **Isolation**: External websites (Google, etc.) are loaded in restricted webviews.
+   - **Permissions**: `shell:allow-open` is restricted to specific URL schemes.
+
 ## 🛠️ Development
 
 ```bash
