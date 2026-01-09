@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "Peko",
+    "identifier": "com.peko.desktop",
+    "version": "0.1.0",
+    "build": {
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "pnpm build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "withGlobalTauri": true,
+        "windows": [],
+        "security": {
+            "csp": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-src https:; font-src 'self' data: https:;"
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/icon.icns",
+            "icons/icon.ico",
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.png"
+        ],
+        "macOS": {
+            "minimumSystemVersion": "10.15"
+        }
+    }
+}

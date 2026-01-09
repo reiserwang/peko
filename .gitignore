@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build outputs (except bundle)
+dist/
+src-tauri/target/release/build/
+src-tauri/target/release/deps/
+src-tauri/target/release/incremental/
+src-tauri/target/release/.fingerprint/
+src-tauri/target/release/*.d
+src-tauri/target/release/*.rlib
+src-tauri/target/release/peko
+src-tauri/target/debug/
+
+# Keep bundle outputs (.app and .dmg)
+# !src-tauri/target/release/bundle/
+
+# OS files
+.DS_Store
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
