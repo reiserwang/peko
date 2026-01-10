@@ -26,10 +26,16 @@
     </main>
 
     <footer class="settings-footer">
-      <button class="btn btn-secondary" id="add-btn" title="Add Website">
-        <span>➕</span> Add Website
-      </button>
+      <div class="default-section">
+        <label for="default-website">Launch with:</label>
+        <select id="default-website" class="default-select">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
       <div class="spacer"></div>
+      <button class="btn btn-secondary" id="add-btn" title="Add Website">
+        <span>➕</span> Add
+      </button>
       <button class="btn btn-primary" id="save-btn">
         Save & Close
       </button>

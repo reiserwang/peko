@@ -6,6 +6,7 @@ const { getCurrentWindow } = window.__TAURI__.window;
 const EMOJIS = ['✨', '📓', '🌐', '💬', '🔍', '📧', '🎵', '📺', '🐙', '📝', '🎮', '🛒'];
 
 let websites = [];
+let defaultWebsite = null;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -13,9 +14,11 @@ async function init() {
   try {
     const settings = await invoke('get_settings');
     websites = settings.websites || [];
+    defaultWebsite = settings.default_website || (websites[0]?.id ?? null);
   } catch (error) {
     console.error('Failed to load settings:', error);
     websites = [];
+    defaultWebsite = null;
   }
 
   render();
@@ -25,6 +28,9 @@ async function init() {
 function setupEventListeners() {
   document.getElementById('add-btn').addEventListener('click', addWebsite);
   document.getElementById('save-btn').addEventListener('click', saveAndClose);
+  document.getElementById('default-website').addEventListener('change', (e) => {
+    defaultWebsite = e.target.value;
+  });
 
   // Close emoji pickers on outside click
   document.addEventListener('click', (e) => {
@@ -59,6 +65,8 @@ function render() {
       const index = parseInt(e.target.dataset.index);
       const field = e.target.dataset.field;
       websites[index][field] = e.target.value;
+      // Update default dropdown if name changes
+      if (field === 'name') renderDefaultSelector();
     });
   });
 
@@ -66,7 +74,12 @@ function render() {
   list.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const index = parseInt(e.target.dataset.index);
+      const removedId = websites[index].id;
       websites.splice(index, 1);
+      // Reset default if deleted
+      if (defaultWebsite === removedId && websites.length > 0) {
+        defaultWebsite = websites[0].id;
+      }
       render();
     });
   });
@@ -81,6 +94,24 @@ function render() {
 
   // Update add button state
   document.getElementById('add-btn').disabled = websites.length >= 5;
+
+  // Render default website selector
+  renderDefaultSelector();
+}
+
+function renderDefaultSelector() {
+  const select = document.getElementById('default-website');
+  const validWebsites = websites.filter(w => w.name.trim());
+
+  select.innerHTML = validWebsites.map(w =>
+    `<option value="${w.id}" ${w.id === defaultWebsite ? 'selected' : ''}>${w.emoji} ${escapeHtml(w.name)}</option>`
+  ).join('');
+
+  // Ensure defaultWebsite is valid
+  if (validWebsites.length > 0 && !validWebsites.find(w => w.id === defaultWebsite)) {
+    defaultWebsite = validWebsites[0].id;
+    select.value = defaultWebsite;
+  }
 }
 
 function addWebsite() {
@@ -119,6 +150,7 @@ function showEmojiPicker(button, index) {
       websites[index].emoji = emoji;
       button.textContent = emoji;
       picker.remove();
+      renderDefaultSelector();
     });
     picker.appendChild(option);
   });
@@ -150,6 +182,10 @@ async function saveAndClose() {
 
   try {
     await invoke('save_websites', { websites: valid });
+    // Save default website if valid
+    if (defaultWebsite && valid.find(w => w.id === defaultWebsite)) {
+      await invoke('save_default_website', { websiteId: defaultWebsite });
+    }
     const win = getCurrentWindow();
     await win.close();
   } catch (error) {
@@ -163,3 +199,4 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+

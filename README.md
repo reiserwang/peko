@@ -18,6 +18,25 @@
 | `⌘ Tab` | Cycle to next tab |
 | `⌘ ,` | Open Settings |
 
+## 🤔 Why Tauri?
+
+| Aspect | **Tauri** | **Native Swift** | **Flutter** |
+|--------|-----------|------------------|-------------|
+| **App Size** | ~5 MB ✅ | ~10 MB | ~20 MB |
+| **Performance** | Near-native | Native | Near-native |
+| **Platforms** | macOS, Windows, Linux, iOS*, Android* | Apple only | All platforms |
+| **UI Tech** | Web (HTML/CSS/JS) | SwiftUI/UIKit | Dart widgets |
+| **Memory** | Low (Rust) | Low | Medium |
+
+**Why we chose Tauri:**
+- 🦀 **Rust backend** — memory-safe, fast, secure
+- 🌐 **Web frontend** — reuse existing web skills
+- 📦 **Tiny bundles** — uses system WebView, not bundled Chromium
+- 🔒 **Security-first** — sandboxed permissions, CSP support
+- 📱 **Mobile ready** — iOS/Android support in Tauri v2
+
+> *Mobile support is in beta but rapidly maturing. Run `cargo tauri ios dev` or `cargo tauri android dev` to test.*
+
 ## 📦 Installation
 
 ### Download (Recommended)

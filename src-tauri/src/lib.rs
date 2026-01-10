@@ -21,6 +21,8 @@ pub struct AppSettings {
     pub websites: Vec<Website>,
     pub active_tab: String,
     #[serde(default)]
+    pub default_website: Option<String>,
+    #[serde(default)]
     pub auto_paste_on_focus: bool,
 }
 
@@ -42,6 +44,7 @@ impl Default for AppSettings {
                 },
             ],
             active_tab: "gemini".to_string(),
+            default_website: Some("gemini".to_string()),
             auto_paste_on_focus: false,
         }
     }
@@ -226,6 +229,41 @@ fn toggle_auto_paste(app: AppHandle) -> Result<bool, String> {
     Ok(enabled)
 }
 
+#[tauri::command]
+fn go_back(app: AppHandle) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let settings = state.0.lock().unwrap();
+    let active = settings.active_tab.clone();
+    drop(settings);
+    
+    if let Some(webview) = app.get_webview_window(&active) {
+        webview.eval("history.back()").map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn go_forward(app: AppHandle) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let settings = state.0.lock().unwrap();
+    let active = settings.active_tab.clone();
+    drop(settings);
+    
+    if let Some(webview) = app.get_webview_window(&active) {
+        webview.eval("history.forward()").map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn save_default_website(app: AppHandle, website_id: String) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let mut settings = state.0.lock().unwrap();
+    settings.default_website = Some(website_id);
+    save_settings_to_file(&app, &settings)?;
+    Ok(())
+}
+
 fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<SettingsState>();
     let settings = state.0.lock().unwrap();
@@ -302,13 +340,35 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
         ]
     ).map_err(|e| e.to_string())?;
     
+    // Navigation items
+    let back_item = MenuItem::with_id(
+        app,
+        "go_back",
+        "Back",
+        true,
+        Some("CmdOrCtrl+[")
+    ).map_err(|e| e.to_string())?;
+    
+    let forward_item = MenuItem::with_id(
+        app,
+        "go_forward",
+        "Forward",
+        true,
+        Some("CmdOrCtrl+]")
+    ).map_err(|e| e.to_string())?;
+    
+    let separator3 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
+    
     // View menu
     let view_menu = Submenu::with_items(
         app,
         "View",
         true,
         &[
-            &cycle_item as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            &back_item as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            &forward_item,
+            &separator3,
+            &cycle_item,
             &separator2,
             &auto_paste_item,
         ]
@@ -341,6 +401,12 @@ fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
         "auto_paste" => {
             let _ = toggle_auto_paste(app.clone());
         }
+        "go_back" => {
+            let _ = go_back(app.clone());
+        }
+        "go_forward" => {
+            let _ = go_forward(app.clone());
+        }
         _ => {
             let state = app.state::<SettingsState>();
             let settings = state.0.lock().unwrap();
@@ -360,7 +426,9 @@ fn create_website_windows(app: &tauri::App, settings: &AppSettings) {
         let data_dir = app_data_dir.join(format!("webview_{}", website.id));
         fs::create_dir_all(&data_dir).expect("Failed to create webview data directory");
         
-        let visible = website.id == settings.active_tab;
+        // Use default_website for initial visibility, fallback to active_tab
+        let default_id = settings.default_website.as_ref().unwrap_or(&settings.active_tab);
+        let visible = website.id == *default_id;
         
         let _ = WebviewWindowBuilder::new(
             app,
@@ -395,7 +463,10 @@ pub fn run() {
             switch_tab,
             open_settings,
             cycle_tab,
-            toggle_auto_paste
+            toggle_auto_paste,
+            go_back,
+            go_forward,
+            save_default_website
         ])
         .setup(|app| {
             // Load settings
