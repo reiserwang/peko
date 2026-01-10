@@ -59,11 +59,33 @@ pnpm install
 # Development mode
 pnpm tauri dev
 
-# Build for production
+# Build for production (app + DMG)
 pnpm tauri build
 ```
 
-The built app is at `src-tauri/target/release/bundle/macos/Peko.app`
+**Build outputs:**
+| File | Location |
+|------|----------|
+| App | `src-tauri/target/release/bundle/macos/Peko.app` |
+| DMG | `src-tauri/target/release/bundle/dmg/Peko_0.1.0_aarch64.dmg` |
+
+To install, open the DMG and drag Peko to Applications.
+
+### Manual DMG Creation
+
+If you need to create a DMG manually from the `.app`:
+
+```bash
+# Create a temporary folder
+mkdir -p dmg_temp
+cp -r src-tauri/target/release/bundle/macos/Peko.app dmg_temp/
+
+# Create the DMG
+hdiutil create -volname "Peko" -srcfolder dmg_temp -ov -format UDZO Peko.dmg
+
+# Cleanup
+rm -rf dmg_temp
+```
 
 ## 🔧 Configuration
 
