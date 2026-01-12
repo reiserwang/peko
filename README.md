@@ -16,6 +16,9 @@
 |----------|--------|
 | `⌘ 1-5` | Switch to tab 1-5 |
 | `⌘ Tab` | Cycle to next tab |
+| `⌘ [` | Navigate back |
+| `⌘ ]` | Navigate forward |
+| `⌘ '` | Toggle notes (sidebar → window → hidden) |
 | `⌘ ,` | Open Settings |
 
 ## 🤔 Why Tauri?
@@ -101,6 +104,39 @@ Peko comes pre-configured with:
 4. Click **Save & Close**
 
 Settings are stored in `~/Library/Application Support/com.peko.app/settings.json`
+
+## 📝 Notes Panel
+
+A built-in notes panel for jotting down thoughts while browsing. Press `⌘'` (Cmd+backtick) to cycle through display modes.
+
+### Display Modes
+
+| Mode | Description |
+|------|-------------|
+| **Sidebar** | Attached to right of website window (no title bar) |
+| **Window** | Standalone floating window (with title bar) |
+| **Hidden** | Panel closed |
+
+### Features
+
+- **Markdown support** — Write in markdown, preview rendered output
+- **Auto-save** — Notes save automatically as you type
+- **Persistent** — Notes are stored across app restarts
+- **Edit/Preview tabs** — Toggle between editing and viewing
+
+### Implementation Notes
+
+> **Current Approach**: Sidebar mode uses an adjacent window without decorations (no title bar) positioned next to the website window. This provides a sidebar-like appearance while using Tauri's stable API.
+
+> **Limitation**: True embedded multi-webview (sidebar within the same window) requires Tauri's `unstable` feature, which is experimental. The current implementation approximates this with adjacent windows.
+
+#### Alternative Implementations
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Adjacent windows** (current) | Works with stable API | Two separate windows |
+| **Multi-webview** | True embedded sidebar | Requires `unstable` feature |
+| **JavaScript injection** | Single window | Blocked by CSP on external sites |
 
 ## 📁 Project Structure
 

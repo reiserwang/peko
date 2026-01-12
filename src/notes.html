@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes</title>
+    <link rel="stylesheet" href="notes.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <div class="titlebar" data-tauri-drag-region>
+        <div class="titlebar-spacer"></div>
+        <span class="titlebar-title">Notes</span>
+        <div class="titlebar-spacer"></div>
+    </div>
+
+    <div class="notes-container">
+        <div class="notes-tabs">
+            <button class="tab-btn active" data-mode="edit">Edit</button>
+            <button class="tab-btn" data-mode="preview">Preview</button>
+        </div>
+
+        <div class="notes-content">
+            <textarea id="notes-editor" placeholder="Write your notes here...
+
+Supports **Markdown** formatting:
+- Lists
+- **Bold** and *italic*
+- `code`
+- [links](url)
+- And more..."></textarea>
+
+            <div id="notes-preview" class="hidden"></div>
+        </div>
+    </div>
+
+    <script src="notes.js" type="module"></script>
+</body>
+
+</html>
