@@ -24,6 +24,14 @@ pub struct AppSettings {
     pub default_website: Option<String>,
     #[serde(default)]
     pub auto_paste_on_focus: bool,
+    #[serde(default)]
+    pub notes_content: String,
+    #[serde(default = "default_notes_mode")]
+    pub notes_mode: String,  // "hidden", "sidebar", "window"
+}
+
+fn default_notes_mode() -> String {
+    "hidden".to_string()
 }
 
 impl Default for AppSettings {
@@ -46,6 +54,8 @@ impl Default for AppSettings {
             active_tab: "gemini".to_string(),
             default_website: Some("gemini".to_string()),
             auto_paste_on_focus: false,
+            notes_content: String::new(),
+            notes_mode: "hidden".to_string(),
         }
     }
 }
@@ -264,6 +274,116 @@ fn save_default_website(app: AppHandle, website_id: String) -> Result<(), String
     Ok(())
 }
 
+#[tauri::command]
+fn toggle_notes(app: AppHandle) -> Result<String, String> {
+    let state = app.state::<SettingsState>();
+    let mut settings = state.0.lock().unwrap();
+    
+    // Cycle: hidden -> sidebar -> window -> hidden
+    let new_mode = match settings.notes_mode.as_str() {
+        "hidden" => "sidebar",
+        "sidebar" => "window",
+        "window" => "hidden",
+        _ => "hidden",
+    };
+    
+    settings.notes_mode = new_mode.to_string();
+    let active_tab = settings.active_tab.clone();
+    save_settings_to_file(&app, &settings)?;
+    drop(settings);
+    
+    let sidebar_width: u32 = 350;
+    
+    match new_mode {
+        "hidden" => {
+            // Hide notes window
+            if let Some(notes_window) = app.get_webview_window("notes") {
+                notes_window.hide().map_err(|e| e.to_string())?;
+            }
+            // Restore main window size
+            if let Some(main_window) = app.get_webview_window(&active_tab) {
+                let _ = main_window.set_focus();
+            }
+        }
+        "sidebar" => {
+            // Position notes window attached to right of main window
+            if let Some(main_window) = app.get_webview_window(&active_tab) {
+                let pos = main_window.outer_position().unwrap_or_default();
+                let size = main_window.outer_size().unwrap_or_default();
+                
+                let notes_x = pos.x + size.width as i32;
+                let notes_y = pos.y;
+                let notes_height = size.height;
+                
+                if let Some(notes_window) = app.get_webview_window("notes") {
+                    notes_window.set_position(tauri::PhysicalPosition::new(notes_x, notes_y)).ok();
+                    notes_window.set_size(tauri::PhysicalSize::new(sidebar_width, notes_height)).ok();
+                    notes_window.set_decorations(false).ok();  // No title bar in sidebar mode
+                    notes_window.show().map_err(|e| e.to_string())?;
+                } else {
+                    WebviewWindowBuilder::new(
+                        &app,
+                        "notes",
+                        WebviewUrl::App("notes.html".into())
+                    )
+                    .title("Notes")
+                    .position(notes_x as f64, notes_y as f64)
+                    .inner_size(sidebar_width as f64, notes_height as f64)
+                    .min_inner_size(200.0, 300.0)
+                    .resizable(true)
+                    .decorations(false)  // No title bar - looks like sidebar
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                }
+            }
+        }
+        "window" => {
+            // Standalone floating window with decorations
+            if let Some(notes_window) = app.get_webview_window("notes") {
+                notes_window.set_decorations(true).ok();  // Restore title bar
+                notes_window.center().ok();
+                notes_window.set_size(tauri::PhysicalSize::new(400, 600)).ok();
+                notes_window.show().map_err(|e| e.to_string())?;
+                notes_window.set_focus().map_err(|e| e.to_string())?;
+            } else {
+                WebviewWindowBuilder::new(
+                    &app,
+                    "notes",
+                    WebviewUrl::App("notes.html".into())
+                )
+                .title("Notes")
+                .inner_size(400.0, 600.0)
+                .min_inner_size(300.0, 400.0)
+                .resizable(true)
+                .decorations(true)
+                .center()
+                .build()
+                .map_err(|e| e.to_string())?;
+            }
+        }
+        _ => {}
+    }
+    
+    log::info!("Notes mode: {}", new_mode);
+    Ok(new_mode.to_string())
+}
+
+#[tauri::command]
+fn save_notes(app: AppHandle, content: String) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let mut settings = state.0.lock().unwrap();
+    settings.notes_content = content;
+    save_settings_to_file(&app, &settings)?;
+    Ok(())
+}
+
+#[tauri::command]
+fn get_notes(app: AppHandle) -> Result<String, String> {
+    let state = app.state::<SettingsState>();
+    let settings = state.0.lock().unwrap();
+    Ok(settings.notes_content.clone())
+}
+
 fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<SettingsState>();
     let settings = state.0.lock().unwrap();
@@ -302,7 +422,7 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
         "settings",
         "Settings...",
         true,
-        Some("CmdOrCtrl+,")
+        Some("CmdOrCtrl+Comma")
     ).map_err(|e| e.to_string())?;
     
     // Auto-paste toggle
@@ -359,6 +479,41 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
     
     let separator3 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
     
+    // Notes toggle
+    let notes_item = MenuItem::with_id(
+        app,
+        "toggle_notes",
+        "Toggle Notes",
+        true,
+        Some("CmdOrCtrl+N")
+    ).map_err(|e| e.to_string())?;
+    
+    let separator4 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
+    
+    // Edit menu with standard copy/paste actions
+    let undo = PredefinedMenuItem::undo(app, Some("Undo")).map_err(|e| e.to_string())?;
+    let redo = PredefinedMenuItem::redo(app, Some("Redo")).map_err(|e| e.to_string())?;
+    let cut = PredefinedMenuItem::cut(app, Some("Cut")).map_err(|e| e.to_string())?;
+    let copy = PredefinedMenuItem::copy(app, Some("Copy")).map_err(|e| e.to_string())?;
+    let paste = PredefinedMenuItem::paste(app, Some("Paste")).map_err(|e| e.to_string())?;
+    let select_all = PredefinedMenuItem::select_all(app, Some("Select All")).map_err(|e| e.to_string())?;
+    let edit_separator = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
+    
+    let edit_menu = Submenu::with_items(
+        app,
+        "Edit",
+        true,
+        &[
+            &undo as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            &redo,
+            &edit_separator,
+            &cut,
+            &copy,
+            &paste,
+            &select_all,
+        ]
+    ).map_err(|e| e.to_string())?;
+    
     // View menu
     let view_menu = Submenu::with_items(
         app,
@@ -368,6 +523,8 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
             &back_item as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
             &forward_item,
             &separator3,
+            &notes_item,
+            &separator4,
             &cycle_item,
             &separator2,
             &auto_paste_item,
@@ -378,6 +535,7 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
         app,
         &[
             &app_menu as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            &edit_menu,
             &tabs_submenu,
             &view_menu,
         ]
@@ -406,6 +564,9 @@ fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
         }
         "go_forward" => {
             let _ = go_forward(app.clone());
+        }
+        "toggle_notes" => {
+            let _ = toggle_notes(app.clone());
         }
         _ => {
             let state = app.state::<SettingsState>();
@@ -466,7 +627,10 @@ pub fn run() {
             toggle_auto_paste,
             go_back,
             go_forward,
-            save_default_website
+            save_default_website,
+            toggle_notes,
+            save_notes,
+            get_notes
         ])
         .setup(|app| {
             // Load settings
