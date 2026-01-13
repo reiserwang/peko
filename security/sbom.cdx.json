@@ -1,0 +1,254 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "serialNumber": "urn:uuid:85d7bdd0-0113-2026-peko-sbom-001",
+    "version": 1,
+    "metadata": {
+        "timestamp": "2026-01-13T15:39:00+08:00",
+        "tools": {
+            "components": [
+                {
+                    "type": "application",
+                    "name": "cargo-audit",
+                    "version": "0.22.0"
+                },
+                {
+                    "type": "application",
+                    "name": "pnpm",
+                    "version": "9.x"
+                }
+            ]
+        },
+        "component": {
+            "type": "application",
+            "bom-ref": "peko@0.1.0",
+            "name": "peko",
+            "version": "0.1.0",
+            "description": "Turn any webpage into a desktop app",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:github/peko/peko@0.1.0"
+        }
+    },
+    "components": [
+        {
+            "type": "library",
+            "bom-ref": "npm:@tauri-apps/api@2.9.1",
+            "group": "@tauri-apps",
+            "name": "api",
+            "version": "2.9.1",
+            "purl": "pkg:npm/%40tauri-apps/api@2.9.1",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "npm:@tauri-apps/cli@2.9.6",
+            "group": "@tauri-apps",
+            "name": "cli",
+            "version": "2.9.6",
+            "purl": "pkg:npm/%40tauri-apps/cli@2.9.6",
+            "scope": "optional",
+            "properties": [
+                {
+                    "name": "npm:development",
+                    "value": "true"
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "npm:sharp@0.34.5",
+            "name": "sharp",
+            "version": "0.34.5",
+            "purl": "pkg:npm/sharp@0.34.5",
+            "scope": "optional",
+            "properties": [
+                {
+                    "name": "npm:development",
+                    "value": "true"
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "npm:vite@6.4.1",
+            "name": "vite",
+            "version": "6.4.1",
+            "purl": "pkg:npm/vite@6.4.1",
+            "scope": "optional",
+            "properties": [
+                {
+                    "name": "npm:development",
+                    "value": "true"
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:tauri@2.9.5",
+            "name": "tauri",
+            "version": "2.9.5",
+            "purl": "pkg:cargo/tauri@2.9.5",
+            "scope": "required",
+            "externalReferences": [
+                {
+                    "type": "website",
+                    "url": "https://tauri.app"
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:tauri-plugin-shell@2.3.3",
+            "name": "tauri-plugin-shell",
+            "version": "2.3.3",
+            "purl": "pkg:cargo/tauri-plugin-shell@2.3.3",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:tauri-plugin-clipboard-manager@2.3.2",
+            "name": "tauri-plugin-clipboard-manager",
+            "version": "2.3.2",
+            "purl": "pkg:cargo/tauri-plugin-clipboard-manager@2.3.2",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:serde@1.0.228",
+            "name": "serde",
+            "version": "1.0.228",
+            "purl": "pkg:cargo/serde@1.0.228",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:serde_json@1.0.149",
+            "name": "serde_json",
+            "version": "1.0.149",
+            "purl": "pkg:cargo/serde_json@1.0.149",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:url@2.5.8",
+            "name": "url",
+            "version": "2.5.8",
+            "purl": "pkg:cargo/url@2.5.8",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:log@0.4.29",
+            "name": "log",
+            "version": "0.4.29",
+            "purl": "pkg:cargo/log@0.4.29",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:env_logger@0.11.8",
+            "name": "env_logger",
+            "version": "0.11.8",
+            "purl": "pkg:cargo/env_logger@0.11.8",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:tokio@1.49.0",
+            "name": "tokio",
+            "version": "1.49.0",
+            "purl": "pkg:cargo/tokio@1.49.0",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "bom-ref": "cargo:tauri-build@2.5.3",
+            "name": "tauri-build",
+            "version": "2.5.3",
+            "purl": "pkg:cargo/tauri-build@2.5.3",
+            "scope": "optional",
+            "properties": [
+                {
+                    "name": "cargo:build-dependency",
+                    "value": "true"
+                }
+            ]
+        }
+    ],
+    "dependencies": [
+        {
+            "ref": "peko@0.1.0",
+            "dependsOn": [
+                "npm:@tauri-apps/api@2.9.1",
+                "cargo:tauri@2.9.5",
+                "cargo:tauri-plugin-shell@2.3.3",
+                "cargo:tauri-plugin-clipboard-manager@2.3.2",
+                "cargo:serde@1.0.228",
+                "cargo:serde_json@1.0.149",
+                "cargo:url@2.5.8",
+                "cargo:log@0.4.29",
+                "cargo:env_logger@0.11.8",
+                "cargo:tokio@1.49.0"
+            ]
+        }
+    ],
+    "vulnerabilities": [
+        {
+            "id": "RUSTSEC-2025-0075",
+            "source": {
+                "name": "RustSec",
+                "url": "https://rustsec.org/advisories/RUSTSEC-2025-0075"
+            },
+            "ratings": [
+                {
+                    "severity": "info",
+                    "method": "other"
+                }
+            ],
+            "description": "unic-char-range is unmaintained (transitive dependency via tauri-utils)",
+            "recommendation": "Monitor Tauri releases for dependency updates",
+            "analysis": {
+                "state": "not_affected",
+                "justification": "requires_dependency_upgrade",
+                "detail": "Transitive dependency from Tauri framework, not directly controllable"
+            },
+            "affects": [
+                {
+                    "ref": "cargo:tauri@2.9.5"
+                }
+            ]
+        },
+        {
+            "id": "RUSTSEC-2024-0429",
+            "source": {
+                "name": "RustSec",
+                "url": "https://rustsec.org/advisories/RUSTSEC-2024-0429"
+            },
+            "ratings": [
+                {
+                    "severity": "low",
+                    "method": "other"
+                }
+            ],
+            "description": "Unsoundness in glib VariantStrIter (Linux GTK only)",
+            "recommendation": "Monitor for glib updates, only affects Linux builds",
+            "analysis": {
+                "state": "not_affected",
+                "justification": "protected_at_runtime",
+                "detail": "macOS build does not use GTK/glib"
+            },
+            "affects": [
+                {
+                    "ref": "cargo:tauri@2.9.5"
+                }
+            ]
+        }
+    ]
+}
