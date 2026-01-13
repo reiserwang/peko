@@ -24,3 +24,11 @@ src-tauri/target/debug/
 .idea/
 .vscode/
 *.swp
+
+# AI Agent
+.agents
+.shared
+.claude
+.gemini
+CLAUDE.md
+GEMINI.md
