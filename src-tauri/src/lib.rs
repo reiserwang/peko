@@ -540,6 +540,15 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
     
     let separator4 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
     
+    // Tab switcher
+    let tab_switcher_item = MenuItem::with_id(
+        app,
+        "show_tab_switcher",
+        "Show Tab Switcher",
+        true,
+        Some("CmdOrCtrl+\\")
+    ).map_err(|e| e.to_string())?;
+    
     // Edit menu with standard copy/paste actions
     let undo = PredefinedMenuItem::undo(app, Some("Undo")).map_err(|e| e.to_string())?;
     let redo = PredefinedMenuItem::redo(app, Some("Redo")).map_err(|e| e.to_string())?;
@@ -564,7 +573,6 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
         ]
     ).map_err(|e| e.to_string())?;
     
-    // View menu
     let view_menu = Submenu::with_items(
         app,
         "View",
@@ -574,6 +582,7 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
             &forward_item,
             &separator3,
             &notes_item,
+            &tab_switcher_item,
             &separator4,
             &cycle_item,
             &separator2,
@@ -617,6 +626,9 @@ fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
         }
         "toggle_notes" => {
             let _ = toggle_notes(app.clone());
+        }
+        "show_tab_switcher" => {
+            let _ = show_tab_switcher(app.clone());
         }
         _ => {
             let state = app.state::<SettingsState>();
