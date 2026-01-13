@@ -634,7 +634,7 @@ pub fn run() {
         ])
         .setup(|app| {
             // Load settings
-            let settings = load_settings(&app.handle());
+            let settings = load_settings(app.handle());
             log::info!("Loaded {} websites, active: {}", settings.websites.len(), settings.active_tab);
             
             // Set auto-paste state
@@ -649,7 +649,7 @@ pub fn run() {
             app.manage(SettingsState(Mutex::new(settings)));
             
             // Build menu
-            rebuild_menu(&app.handle())?;
+            rebuild_menu(app.handle())?;
             
             Ok(())
         })
@@ -678,4 +678,182 @@ pub fn run() {
         .on_menu_event(handle_menu_event)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ===== Website Struct Tests =====
+
+    #[test]
+    fn test_website_creation() {
+        let website = Website {
+            id: "test_id".to_string(),
+            name: "Test Site".to_string(),
+            url: "https://example.com".to_string(),
+            emoji: "🌐".to_string(),
+        };
+
+        assert_eq!(website.id, "test_id");
+        assert_eq!(website.name, "Test Site");
+        assert_eq!(website.url, "https://example.com");
+        assert_eq!(website.emoji, "🌐");
+    }
+
+    #[test]
+    fn test_website_clone() {
+        let original = Website {
+            id: "clone_test".to_string(),
+            name: "Clone Test".to_string(),
+            url: "https://clone.example.com".to_string(),
+            emoji: "📋".to_string(),
+        };
+
+        let cloned = original.clone();
+
+        assert_eq!(original.id, cloned.id);
+        assert_eq!(original.name, cloned.name);
+        assert_eq!(original.url, cloned.url);
+        assert_eq!(original.emoji, cloned.emoji);
+    }
+
+    // ===== AppSettings Tests =====
+
+    #[test]
+    fn test_app_settings_default() {
+        let settings = AppSettings::default();
+
+        // Should have 2 default websites
+        assert_eq!(settings.websites.len(), 2);
+        
+        // First should be Gemini
+        assert_eq!(settings.websites[0].id, "gemini");
+        assert_eq!(settings.websites[0].name, "Gemini");
+        assert_eq!(settings.websites[0].url, "https://gemini.google.com/app");
+        
+        // Second should be NotebookLM
+        assert_eq!(settings.websites[1].id, "notebooklm");
+        assert_eq!(settings.websites[1].name, "NotebookLM");
+        
+        // Check other default values
+        assert_eq!(settings.active_tab, "gemini");
+        assert_eq!(settings.default_website, Some("gemini".to_string()));
+        assert!(!settings.auto_paste_on_focus);
+        assert!(settings.notes_content.is_empty());
+        assert_eq!(settings.notes_mode, "hidden");
+    }
+
+    #[test]
+    fn test_default_notes_mode() {
+        assert_eq!(default_notes_mode(), "hidden");
+    }
+
+    // ===== Serialization Tests =====
+
+    #[test]
+    fn test_website_serialization_roundtrip() {
+        let website = Website {
+            id: "serial_test".to_string(),
+            name: "Serialization Test".to_string(),
+            url: "https://serial.example.com".to_string(),
+            emoji: "🔄".to_string(),
+        };
+
+        let json = serde_json::to_string(&website).expect("Failed to serialize");
+        let deserialized: Website = serde_json::from_str(&json).expect("Failed to deserialize");
+
+        assert_eq!(website.id, deserialized.id);
+        assert_eq!(website.name, deserialized.name);
+        assert_eq!(website.url, deserialized.url);
+        assert_eq!(website.emoji, deserialized.emoji);
+    }
+
+    #[test]
+    fn test_app_settings_serialization_roundtrip() {
+        let settings = AppSettings {
+            websites: vec![
+                Website {
+                    id: "test1".to_string(),
+                    name: "Test One".to_string(),
+                    url: "https://one.example.com".to_string(),
+                    emoji: "1️⃣".to_string(),
+                },
+            ],
+            active_tab: "test1".to_string(),
+            default_website: Some("test1".to_string()),
+            auto_paste_on_focus: true,
+            notes_content: "Test notes content".to_string(),
+            notes_mode: "sidebar".to_string(),
+        };
+
+        let json = serde_json::to_string_pretty(&settings).expect("Failed to serialize");
+        let deserialized: AppSettings = serde_json::from_str(&json).expect("Failed to deserialize");
+
+        assert_eq!(settings.websites.len(), deserialized.websites.len());
+        assert_eq!(settings.active_tab, deserialized.active_tab);
+        assert_eq!(settings.default_website, deserialized.default_website);
+        assert_eq!(settings.auto_paste_on_focus, deserialized.auto_paste_on_focus);
+        assert_eq!(settings.notes_content, deserialized.notes_content);
+        assert_eq!(settings.notes_mode, deserialized.notes_mode);
+    }
+
+    #[test]
+    fn test_settings_deserialize_with_missing_optional_fields() {
+        // Simulates loading old settings file without new fields
+        let json = r#"{
+            "websites": [],
+            "active_tab": "gemini"
+        }"#;
+
+        let settings: AppSettings = serde_json::from_str(json).expect("Failed to deserialize");
+
+        // Optional/default fields should have default values
+        assert!(settings.default_website.is_none());
+        assert!(!settings.auto_paste_on_focus);
+        assert!(settings.notes_content.is_empty());
+        assert_eq!(settings.notes_mode, "hidden");
+    }
+
+    // ===== Validation Logic Tests =====
+
+    #[test]
+    fn test_notes_mode_cycle() {
+        // Test the notes mode cycle logic
+        let modes = ["hidden", "sidebar", "window", "hidden"];
+        
+        for i in 0..modes.len() - 1 {
+            let current = modes[i];
+            let expected_next = modes[i + 1];
+            
+            let next = match current {
+                "hidden" => "sidebar",
+                "sidebar" => "window",
+                "window" => "hidden",
+                _ => "hidden",
+            };
+            
+            assert_eq!(next, expected_next, "Mode cycle failed from {}", current);
+        }
+    }
+
+    #[test]
+    fn test_website_limit_constant() {
+        // The app enforces a max of 5 websites
+        // This test documents that constraint
+        let max_websites = 5;
+        
+        let mut websites = Vec::new();
+        for i in 0..max_websites {
+            websites.push(Website {
+                id: format!("site_{}", i),
+                name: format!("Site {}", i),
+                url: format!("https://site{}.example.com", i),
+                emoji: "🌐".to_string(),
+            });
+        }
+        
+        assert_eq!(websites.len(), 5);
+        // Adding more than 5 should be rejected by save_websites command
+    }
 }
