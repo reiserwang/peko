@@ -384,6 +384,56 @@ fn get_notes(app: AppHandle) -> Result<String, String> {
     Ok(settings.notes_content.clone())
 }
 
+#[tauri::command]
+fn show_tab_switcher(app: AppHandle) -> Result<(), String> {
+    // Get active tab to position overlay
+    let state = app.state::<SettingsState>();
+    let settings = state.0.lock().unwrap();
+    let active_tab = settings.active_tab.clone();
+    drop(settings);
+    
+    // Get main window position for overlay placement
+    let (pos_x, pos_y) = if let Some(main_window) = app.get_webview_window(&active_tab) {
+        let pos = main_window.outer_position().unwrap_or_default();
+        let size = main_window.outer_size().unwrap_or_default();
+        // Center horizontally, position at top
+        (pos.x + (size.width as i32 / 2) - 250, pos.y + 20)
+    } else {
+        (400, 100)
+    };
+    
+    if let Some(overlay) = app.get_webview_window("tab_switcher") {
+        overlay.set_position(tauri::PhysicalPosition::new(pos_x, pos_y)).ok();
+        overlay.show().map_err(|e| e.to_string())?;
+        overlay.set_focus().map_err(|e| e.to_string())?;
+    } else {
+        WebviewWindowBuilder::new(
+            &app,
+            "tab_switcher",
+            WebviewUrl::App("tab-switcher.html".into())
+        )
+        .title("Tab Switcher")
+        .inner_size(500.0, 120.0)
+        .position(pos_x as f64, pos_y as f64)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .build()
+        .map_err(|e: tauri::Error| e.to_string())?;
+    }
+    
+    log::info!("Tab switcher shown");
+    Ok(())
+}
+
+#[tauri::command]
+fn hide_tab_switcher(app: AppHandle) -> Result<(), String> {
+    if let Some(overlay) = app.get_webview_window("tab_switcher") {
+        overlay.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<SettingsState>();
     let settings = state.0.lock().unwrap();
@@ -630,7 +680,9 @@ pub fn run() {
             save_default_website,
             toggle_notes,
             save_notes,
-            get_notes
+            get_notes,
+            show_tab_switcher,
+            hide_tab_switcher
         ])
         .setup(|app| {
             // Load settings
