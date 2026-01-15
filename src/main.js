@@ -7,6 +7,7 @@ const EMOJIS = ['✨', '📓', '🌐', '💬', '🔍', '📧', '🎵', '📺', '
 
 let websites = [];
 let defaultWebsite = null;
+let isComposing = false; // Track IME composition state for Chinese/Japanese/Korean input
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -38,6 +39,37 @@ function setupEventListeners() {
       document.querySelectorAll('.emoji-picker').forEach(p => p.remove());
     }
   });
+
+  // IME composition event handling for Chinese/Japanese/Korean input
+  // This prevents Enter key presses during character selection from triggering form submission
+  document.addEventListener('compositionstart', () => {
+    isComposing = true;
+  });
+
+  document.addEventListener('compositionend', () => {
+    // Use setTimeout to delay resetting isComposing
+    // This ensures the keydown handler still sees isComposing=true
+    // for the Enter key that confirms the composition
+    setTimeout(() => {
+      isComposing = false;
+    }, 0);
+  });
+
+  // Prevent Enter key from triggering form submission during IME composition
+  // Use capture phase to intercept before other handlers
+  document.addEventListener('keydown', (e) => {
+    // Check multiple indicators of IME composition:
+    // 1. Our tracked isComposing flag
+    // 2. The event's built-in isComposing property
+    // 3. keyCode 229 which indicates IME is processing
+    const isIMEComposing = isComposing || e.isComposing || e.keyCode === 229;
+
+    if (e.key === 'Enter' && isIMEComposing) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
 }
 
 function render() {

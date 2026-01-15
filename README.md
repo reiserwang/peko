@@ -9,6 +9,7 @@
 - 📑 **Multi-Tab** - Switch between up to 5 websites
 - 💾 **Persistent Login** - Each site keeps you logged in
 - ⚡ **Native Menu Bar** - macOS native tabs and settings
+- 🌏 **International Input** - Full IME support for Chinese, Japanese, Korean input
 
 ### Keyboard Shortcuts
 

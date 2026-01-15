@@ -8,6 +8,45 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 
+/// JavaScript to fix Chinese/Japanese/Korean IME input issues.
+/// Prevents Enter key during IME composition from triggering form submissions.
+const IME_FIX_SCRIPT: &str = r#"
+(function() {
+    'use strict';
+    let isComposing = false;
+    
+    document.addEventListener('compositionstart', function() {
+        isComposing = true;
+    }, true);
+    
+    document.addEventListener('compositionend', function() {
+        // Delay reset to ensure keydown handler sees isComposing=true
+        // for the Enter key that confirms the composition
+        setTimeout(function() {
+            isComposing = false;
+        }, 0);
+    }, true);
+    
+    // Capture phase to intercept before other handlers
+    document.addEventListener('keydown', function(e) {
+        // Check multiple indicators of IME composition:
+        // 1. Our tracked isComposing flag
+        // 2. The event's built-in isComposing property
+        // 3. keyCode 229 which indicates IME is processing
+        var isIMEComposing = isComposing || e.isComposing || e.keyCode === 229;
+        
+        if (e.key === 'Enter' && isIMEComposing) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    }, true);
+    
+    console.log('[Peko] IME fix script loaded');
+})();
+"#;
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Website {
     pub id: String,
@@ -137,6 +176,7 @@ fn save_websites(app: AppHandle, websites: Vec<Website>) -> Result<(), String> {
             .decorations(true)
             .visible(false)
             .data_directory(data_dir)
+            .initialization_script(IME_FIX_SCRIPT)
             .build();
         }
     }
@@ -546,7 +586,7 @@ fn rebuild_menu(app: &AppHandle) -> Result<(), String> {
         "show_tab_switcher",
         "Show Tab Switcher",
         true,
-        Some("CmdOrCtrl+\\")
+        Some("CmdOrCtrl+.")
     ).map_err(|e| e.to_string())?;
     
     // Edit menu with standard copy/paste actions
@@ -665,6 +705,7 @@ fn create_website_windows(app: &tauri::App, settings: &AppSettings) {
         .decorations(true)
         .visible(visible)
         .data_directory(data_dir)
+        .initialization_script(IME_FIX_SCRIPT)
         .build();
     }
 }
